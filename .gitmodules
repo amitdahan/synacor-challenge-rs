@@ -1,3 +1,4 @@
 [submodule "vm_challenge"]
 	path = vm_challenge
 	url = git@github.com:amitdahan/vm_challenge.git
+	branch = amit
