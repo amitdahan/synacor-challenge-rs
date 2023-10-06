@@ -40,6 +40,13 @@ fn parse_u16s(input: &[u8]) -> Vec<u16> {
 }
 
 impl VM {
+    pub fn load_stdin(&mut self, lines: &[&str]) {
+        for line in lines {
+            self.stdin.extend(line.bytes());
+            self.stdin.push_back(b'\n');
+        }
+    }
+
     pub fn load_program(&mut self, path: &str) {
         let mut file = File::open(path).unwrap();
         let mut buffer = Vec::new();
