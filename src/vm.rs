@@ -32,8 +32,6 @@ impl Default for VM {
     }
 }
 
-const DEBUG: bool = false;
-
 fn parse_u16s(input: &[u8]) -> Vec<u16> {
     let result: IResult<&[u8], Vec<u16>> = many0(le_u16)(input);
     result.unwrap().1
@@ -111,67 +109,31 @@ impl VM {
     fn run_current_instruction(&mut self) -> InstructionResult {
         use Instruction::*;
         match self.next_instruction() {
-            Halt => {
-                if DEBUG {
-                    println!("{}\thalt", &self.ip);
-                }
-                return InstructionResult::Halt;
-            }
-            Out(a) => {
-                print!("{}", self.resolve_value(&a) as u8 as char);
-            }
-            Jmp(a) => {
-                if DEBUG {
-                    println!("{}\tjmp {}", &self.ip, a);
-                }
-                self.ip = self.resolve_value(&a);
-            }
+            Halt => return InstructionResult::Halt,
+            Out(a) => print!("{}", self.resolve_value(&a) as u8 as char),
+            Jmp(a) => self.ip = self.resolve_value(&a),
+
             Jf(a, b) => {
-                if DEBUG {
-                    println!("{}\tjf {} {}", &self.ip, a, b);
-                }
                 if self.resolve_value(&a) == 0 {
                     self.ip = self.resolve_value(&b);
                 }
             }
             Jt(a, b) => {
-                if DEBUG {
-                    println!("{}\tjt {} {}", &self.ip, a, b);
-                }
                 if self.resolve_value(&a) != 0 {
                     self.ip = self.resolve_value(&b);
                 }
             }
-            Set(a, b) => {
-                if DEBUG {
-                    println!("{}\tset {} {}", &self.ip, a, b);
-                }
-                self.registers[self.resolve_register(&a)] = self.resolve_value(&b);
-            }
+            Set(a, b) => self.registers[self.resolve_register(&a)] = self.resolve_value(&b),
             Add(a, b, c) => {
-                if DEBUG {
-                    println!("{}\tadd {} {} {}", &self.ip, a, b, c);
-                }
                 self.registers[self.resolve_register(&a)] =
-                    (self.resolve_value(&b) + self.resolve_value(&c)) % 32768;
+                    (self.resolve_value(&b) + self.resolve_value(&c)) % 32768
             }
             Eq(a, b, c) => {
-                if DEBUG {
-                    println!("{}\teq {} {} {}", &self.ip, a, b, c);
-                }
                 self.registers[self.resolve_register(&a)] =
-                    (self.resolve_value(&b) == self.resolve_value(&c)) as u16;
+                    (self.resolve_value(&b) == self.resolve_value(&c)) as u16
             }
-            Push(a) => {
-                if DEBUG {
-                    println!("{}\tpush {}", &self.ip, a);
-                }
-                self.stack.push(self.resolve_value(&a));
-            }
+            Push(a) => self.stack.push(self.resolve_value(&a)),
             Pop(a) => {
-                if DEBUG {
-                    println!("{}\tpop {}", &self.ip, a);
-                }
                 if let Some(value) = self.stack.pop() {
                     self.registers[self.resolve_register(&a)] = value;
                 } else {
@@ -179,71 +141,38 @@ impl VM {
                 }
             }
             Gt(a, b, c) => {
-                if DEBUG {
-                    println!("{}\tgt {} {} {}", &self.ip, a, b, c);
-                }
                 self.registers[self.resolve_register(&a)] =
-                    (self.resolve_value(&b) > self.resolve_value(&c)) as u16;
+                    (self.resolve_value(&b) > self.resolve_value(&c)) as u16
             }
             And(a, b, c) => {
-                if DEBUG {
-                    println!("{}\tand {} {} {}", &self.ip, a, b, c);
-                }
                 self.registers[self.resolve_register(&a)] =
-                    self.resolve_value(&b) & self.resolve_value(&c);
+                    self.resolve_value(&b) & self.resolve_value(&c)
             }
             Or(a, b, c) => {
-                if DEBUG {
-                    println!("{}\tor {} {} {}", &self.ip, a, b, c);
-                }
                 self.registers[self.resolve_register(&a)] =
-                    self.resolve_value(&b) | self.resolve_value(&c);
+                    self.resolve_value(&b) | self.resolve_value(&c)
             }
             Not(a, b) => {
-                if DEBUG {
-                    println!("{}\tnot {} {}", &self.ip, a, b);
-                }
-                self.registers[self.resolve_register(&a)] = !self.resolve_value(&b) & 0x7FFF;
+                self.registers[self.resolve_register(&a)] = !self.resolve_value(&b) & 0x7FFF
             }
             Call(a) => {
-                if DEBUG {
-                    println!("{}\tcall {}", &self.ip, a);
-                }
                 self.stack.push(self.ip);
                 self.ip = self.resolve_value(&a);
             }
             Mult(a, b, c) => {
-                if DEBUG {
-                    println!("{}\tmult {} {} {}", &self.ip, a, b, c);
-                }
-                self.registers[self.resolve_register(&a)] = ((self.resolve_value(&b) as u32
-                    * self.resolve_value(&c) as u32)
-                    % 32768) as u16;
+                self.registers[self.resolve_register(&a)] =
+                    ((self.resolve_value(&b) as u32 * self.resolve_value(&c) as u32) % 32768) as u16
             }
             Mod(a, b, c) => {
-                if DEBUG {
-                    println!("{}\tmod {} {} {}", &self.ip, a, b, c);
-                }
                 self.registers[self.resolve_register(&a)] =
-                    self.resolve_value(&b) % self.resolve_value(&c);
+                    self.resolve_value(&b) % self.resolve_value(&c)
             }
             Rmem(a, b) => {
-                if DEBUG {
-                    println!("{}\trmem {} {}", &self.ip, a, b);
-                }
                 self.registers[self.resolve_register(&a)] =
-                    self.memory[self.resolve_value(&b) as usize];
+                    self.memory[self.resolve_value(&b) as usize]
             }
-            Wmem(a, b) => {
-                if DEBUG {
-                    println!("{}\twmem {} {}", &self.ip, a, b);
-                }
-                self.memory[self.resolve_value(&a) as usize] = self.resolve_value(&b);
-            }
+            Wmem(a, b) => self.memory[self.resolve_value(&a) as usize] = self.resolve_value(&b),
             Ret => {
-                if DEBUG {
-                    println!("{}\tret", &self.ip);
-                }
                 if let Some(address) = self.stack.pop() {
                     self.ip = address;
                 } else {
@@ -251,9 +180,6 @@ impl VM {
                 }
             }
             In(a) => {
-                if DEBUG {
-                    println!("{}\tin {}", &self.ip, a);
-                }
                 if self.stdin.is_empty() {
                     let mut buf = String::new();
                     stdin().read_line(&mut buf).unwrap();
@@ -265,11 +191,7 @@ impl VM {
                     panic!("Attempted to read from empty stdin");
                 }
             }
-            Noop => {
-                if DEBUG {
-                    println!("{}\tnoop", &self.ip);
-                }
-            }
+            Noop => {}
         };
         InstructionResult::Continue
     }
